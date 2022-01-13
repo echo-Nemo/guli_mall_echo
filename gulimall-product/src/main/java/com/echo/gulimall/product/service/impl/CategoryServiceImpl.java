@@ -32,24 +32,45 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
     }
 
     @Override
-    public PageUtils listWithTree() {
+    public List<CategoryEntity> listWithTree() {
+
         //先查出所有分类
-        List<CategoryEntity> rootCategoryList = baseMapper.selectList(null);
+        List<CategoryEntity> allCategoryList = baseMapper.selectList(null);
+
         // 获取该菜单下的一级分类
-        List<CategoryEntity> firstCategoryList = rootCategoryList.stream().filter(categoryEntity -> categoryEntity
+        List<CategoryEntity> firstCategoryList = allCategoryList.stream().filter(categoryEntity -> categoryEntity
                 .getParentCid() == 0).collect(Collectors.toList());
 
-        //firstCategoryList.stream().map(categoryEntity ->)
-        return null;
+        //父子分类的封装
+        List<CategoryEntity> categoryList = firstCategoryList.stream().map(category -> {
+            category.setChildrenCategoryList(getChildren(category, allCategoryList));
+            return category;
+        }).collect(Collectors.toList());
+
+        List<CategoryEntity> assemCategoryList = categoryList.stream().sorted((menu1, menu2) -> {
+            int sort = menu1.getSort().compareTo(menu2.getSort());
+            return sort;
+        }).collect(Collectors.toList());
+        return assemCategoryList;
     }
 
     // 递归查出该分类下的子分类
     public List<CategoryEntity> getChildren(CategoryEntity rootCategory, List<CategoryEntity> allCategory) {
         // 改菜单下的所有子菜单
         List<CategoryEntity> parentCategoryList = allCategory.stream().filter(categoryEntity -> categoryEntity.getParentCid().longValue() == rootCategory.getCatId()).collect(Collectors.toList());
-//         parentCategoryList.stream().map(categoryEntity -> getChildren(categoryEntity, allCategory)).sorted((menu1,menu2)->{
-//             me
-//         })
-        return null;
+
+        // 递归进行查找
+        final List<CategoryEntity> childrenCategoryList = parentCategoryList.stream().map(category -> {
+            category.setChildrenCategoryList(getChildren(category, allCategory));
+            return category;
+        }).collect(Collectors.toList());
+
+        // 分类根据sort进行排序
+        List<CategoryEntity> realCategoryList = childrenCategoryList.stream().sorted((menu1, menu2) -> {
+            int sort = menu1.getSort().compareTo(menu2.getSort());
+            return sort;
+        }).collect(Collectors.toList());
+
+        return realCategoryList;
     }
 }

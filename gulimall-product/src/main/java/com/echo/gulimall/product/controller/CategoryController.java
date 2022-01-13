@@ -1,6 +1,7 @@
 package com.echo.gulimall.product.controller;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import com.echo.common.utils.R;
@@ -32,11 +33,10 @@ public class CategoryController {
      * 获取3级分类的列表
      */
 
-    @RequestMapping("/list")
-    // @RequiresPermissions("product:category:list")
+    @RequestMapping("/listTree")
     public R listTree() {
-        PageUtils page = categoryService.listWithTree();
-        return R.ok().put("page", page);
+        List<CategoryEntity> categoryEntityList = categoryService.listWithTree();
+        return R.ok().put("page", categoryEntityList);
     }
 
 

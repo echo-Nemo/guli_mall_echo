@@ -1,0 +1,40 @@
+server:
+  port: 88
+
+spring:
+  application:
+    name: gulimall-gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+    gateway:
+      routes:
+        # 测试内容
+        - id: test_route
+          uri: https://www.baidu.com
+          predicates:
+            - Query=url,baidu
+
+        # 重定向从renren发过来的product请求
+        - id: product_route
+          uri: lb://gulimall-product
+          predicates:
+            - Path=/api/product/**
+          filters:
+            - RewritePath=/api/(?<segment>.*),/$\{segment}
+
+        - id: admin_route
+          uri: lb://renren-fast
+          predicates:
+            - Path=/api/**
+          filters: # 比如验证码，http://localhost:88/api/captcha.jpg?uuid=c592925c-af7e-415b-83dc-79c28a87351d  转为
+            - RewritePath=/api/(?<segment>.*),/renren-fast/$\{segment}
+
+
+
+  ## 前端项目，/api
+
+## http://localhost:88/api/captcha.jpg   http://localhost:8080/renren-fast/captcha.jpg
+## http://localhost:88/api/product/category/list/tree http://localhost:10000/product/category/list/tree
+

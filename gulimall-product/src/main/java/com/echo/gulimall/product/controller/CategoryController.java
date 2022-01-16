@@ -33,10 +33,10 @@ public class CategoryController {
      * 获取3级分类的列表
      */
 
-    @RequestMapping("/listTree")
+    @RequestMapping("/list/tree")
     public R listTree() {
         List<CategoryEntity> categoryEntityList = categoryService.listWithTree();
-        return R.ok().put("page", categoryEntityList);
+        return R.ok().put("data", categoryEntityList);
     }
 
 

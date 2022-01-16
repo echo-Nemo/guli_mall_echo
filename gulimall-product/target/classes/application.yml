@@ -7,9 +7,9 @@ spring:
   application:
     name: gulimall-product
   datasource:
-    username: leslie
+    username: root
     password: 123456
-    url: jdbc:mysql://${ipAddr}:3306/guli_pms?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://${ipAddr}:33006/guli_pms?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai
     driver-class-name: com.mysql.cj.jdbc.Driver
   cloud:
     nacos:

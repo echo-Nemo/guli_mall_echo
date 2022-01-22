@@ -24,11 +24,12 @@ spring:
           filters:
             - RewritePath=/api/(?<segment>.*),/$\{segment}
 
+
         - id: admin_route
           uri: lb://renren-fast
           predicates:
             - Path=/api/**
-          filters: # 比如验证码，http://localhost:88/api/captcha.jpg?uuid=c592925c-af7e-415b-83dc-79c28a87351d  转为
+          filters:                 # RewritePath=/red(?<segment>/?.*), $\{segment}， gateway的版本为2.2.5时 具体的看官网api
             - RewritePath=/api/(?<segment>.*),/renren-fast/$\{segment}
 
 

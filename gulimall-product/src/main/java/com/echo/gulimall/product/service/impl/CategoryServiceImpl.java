@@ -43,7 +43,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
         //父子分类的封装
         List<CategoryEntity> categoryList = firstCategoryList.stream().map(category -> {
-            category.setChildrenCategoryList(getChildren(category, allCategoryList));
+            category.setChildren(getChildren(category, allCategoryList));
             return category;
         }).collect(Collectors.toList());
 
@@ -61,7 +61,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
         // 递归进行查找
         final List<CategoryEntity> childrenCategoryList = parentCategoryList.stream().map(category -> {
-            category.setChildrenCategoryList(getChildren(category, allCategory));
+            category.setChildren(getChildren(category, allCategory));
             return category;
         }).collect(Collectors.toList());
 
@@ -72,5 +72,14 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         }).collect(Collectors.toList());
 
         return realCategoryList;
+    }
+
+
+    // 根据id进行删除，如果有商品和其关联，就先不能删除
+    @Override
+    public void batchRemoveByIds(List<Long> asList) {
+        //TODO 检查当前的菜单是否被别的地方所引用
+        baseMapper.deleteBatchIds(asList);
+
     }
 }

@@ -39,10 +39,12 @@ public class CategoryEntity implements Serializable {
      * 层级
      */
     private Integer catLevel;
+
     /**
      * 是否显示[0-不显示，1显示]
      */
     private Integer showStatus;
+
     /**
      * 排序
      */
@@ -62,6 +64,6 @@ public class CategoryEntity implements Serializable {
 
     // 改分类下的子分类 // 改属性不在数据库中保存
     @TableField(exist = false)
-    private List<CategoryEntity> childrenCategoryList;
+    private List<CategoryEntity> children;
 
 }

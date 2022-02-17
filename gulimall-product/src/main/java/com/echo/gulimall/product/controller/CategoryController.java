@@ -3,14 +3,14 @@ package com.echo.gulimall.product.controller;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
 import com.echo.common.utils.R;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 import com.echo.gulimall.product.entity.CategoryEntity;
 import com.echo.gulimall.product.service.CategoryService;
 import com.echo.common.utils.PageUtils;
-import sun.rmi.runtime.Log;
+
 
 
 /**
@@ -25,6 +25,9 @@ import sun.rmi.runtime.Log;
 public class CategoryController {
     @Autowired
     private CategoryService categoryService;
+
+    @Autowired
+    private StringRedisTemplate redisTemplate;
 
     /**
      * 获取3级分类的列表
@@ -101,6 +104,13 @@ public class CategoryController {
     public R batchUpdate(@RequestBody CategoryEntity[] categoryEntities) {
         categoryService.updateBatchById(Arrays.asList(categoryEntities));
         return R.ok();
+    }
+
+    @GetMapping("testRedis")
+    public String testRedis() {
+        redisTemplate.opsForValue().append("hello1", "world up up up ");
+        String hello = redisTemplate.opsForValue().get("hello1");
+        return hello;
     }
 
 }

@@ -62,6 +62,6 @@ public class CategoryEntity implements Serializable {
 
     // 改分类下的子分类 // 改属性不在数据库中保存
     @TableField(exist = false)
-    private List<CategoryEntity> childrenCategoryList;
+    private List<CategoryEntity> children;
 
 }

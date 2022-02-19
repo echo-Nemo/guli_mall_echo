@@ -43,7 +43,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
         //父子分类的封装
         List<CategoryEntity> categoryList = firstCategoryList.stream().map(category -> {
-            category.setChildrenCategoryList(getChildren(category, allCategoryList));
+            category.setChildren(getChildren(category, allCategoryList));
             return category;
         }).collect(Collectors.toList());
 
@@ -61,7 +61,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
         // 递归进行查找
         final List<CategoryEntity> childrenCategoryList = parentCategoryList.stream().map(category -> {
-            category.setChildrenCategoryList(getChildren(category, allCategory));
+            category.setChildren(getChildren(category, allCategory));
             return category;
         }).collect(Collectors.toList());
 

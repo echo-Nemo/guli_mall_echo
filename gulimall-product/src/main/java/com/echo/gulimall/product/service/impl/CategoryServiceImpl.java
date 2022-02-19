@@ -1,8 +1,18 @@
 package com.echo.gulimall.product.service.impl;
 
-import lombok.val;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
+import com.aliyun.oss.OSS;
+import com.aliyun.oss.OSSClientBuilder;
+import com.echo.gulimall.product.vo.Catalog2Vo;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -20,6 +30,8 @@ import com.echo.gulimall.product.service.CategoryService;
 
 @Service("categoryService")
 public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity> implements CategoryService {
+    @Autowired
+    private StringRedisTemplate redisTemplate;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -31,15 +43,35 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         return new PageUtils(page);
     }
 
+
+    /**
+     * 使用redis缓存菜单下的一级分类
+     *
+     * @return
+     */
     @Override
     public List<CategoryEntity> listWithTree() {
+        List<CategoryEntity> firstCategoryList = new ArrayList<>();
 
         //先查出所有分类
         List<CategoryEntity> allCategoryList = baseMapper.selectList(null);
 
         // 获取该菜单下的一级分类
-        List<CategoryEntity> firstCategoryList = allCategoryList.stream().filter(categoryEntity -> categoryEntity
-                .getParentCid() == 0).collect(Collectors.toList());
+        String firstLevel = redisTemplate.opsForValue().get("firstLevel");
+
+        // 缓存中没有数据
+        if (StringUtils.isBlank(firstLevel)) {
+            firstCategoryList = allCategoryList.stream().filter(categoryEntity -> categoryEntity
+                    .getParentCid() == 0).collect(Collectors.toList());
+            // 将一级分类转化为json
+            String firstCategoryJson = JSON.toJSONString(firstCategoryList);
+            redisTemplate.opsForValue().set("firstLevel", firstCategoryJson);
+        }
+
+        //  JSON.parseObject(catalogJSON, new TypeReference<Map<String, List<Catalogs2Vo>>>(){});
+        firstCategoryList = JSON.parseObject(firstLevel, new TypeReference<List<CategoryEntity>>() {
+        });
+
 
         //父子分类的封装
         List<CategoryEntity> categoryList = firstCategoryList.stream().map(category -> {
@@ -72,5 +104,97 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         }).collect(Collectors.toList());
 
         return realCategoryList;
+    }
+
+
+//    @Override
+//    public Map<String, List<Catalog2Vo>> getCatalogJson() {
+//        // 1.从缓存中读取分类信息
+//        String catalogJSON = redisTemplate.opsForValue().get("catalogJSON");
+//        if (StringUtils.isEmpty(catalogJSON)) {
+//            // 2. 缓存中没有，查询数据库
+//            Map<String, List<Catalog2Vo>> catalogJsonFromDB = getCatalogJsonFromDB();
+//            // 3. 查询到的数据存放到缓存中，将对象转成 JSON 存储
+//            redisTemplate.opsForValue().set("catalogJSON", JSON.toJSONString(catalogJsonFromDB));
+//            return catalogJsonFromDB;
+//        }
+//        return JSON.parseObject(catalogJSON, new TypeReference<Map<String, List<Catalog2Vo>>>() {
+//        });
+//    }
+
+//    /**
+//     * 加缓存前,只读取数据库的操作
+//     *
+//     * @return
+//     */
+//    public Map<String, List<Catalog2Vo>> getCatalogJsonFromDB() {
+//        System.out.println("查询了数据库");
+//
+//        // 性能优化：将数据库的多次查询变为一次
+//        List<CategoryEntity> selectList = this.baseMapper.selectList(null);
+//
+//        //1、查出所有分类
+//        //1、1）查出所有一级分类
+//        List<CategoryEntity> level1Categories = getParentCid(selectList, 0L);
+//
+//        //封装数据
+//        Map<String, List<Catalog2Vo>> parentCid = level1Categories.stream().collect(Collectors.toMap(k -> k.getCatId().toString(), v -> {
+//            //1、每一个的一级分类,查到这个一级分类的二级分类
+//            List<CategoryEntity> categoryEntities = getParentCid(selectList, v.getCatId());
+//
+//            //2、封装上面的结果
+//            List<Catalog2Vo> Catalog2Vos = null;
+//            if (categoryEntities != null) {
+//                Catalog2Vos = categoryEntities.stream().map(l2 -> {
+//                    Catalog2Vo Catalog2Vo = new Catalog2Vo(v.getCatId().toString(), null, l2.getCatId().toString(), l2.getName().toString());
+//
+//                    //1、找当前二级分类的三级分类封装成vo
+//                    List<CategoryEntity> level3Catelog = getParentCid(selectList, l2.getCatId());
+//
+//                    if (level3Catelog != null) {
+//                        List<Catalog2Vo.catalog3List> category3Vos = level3Catelog.stream().map(l3 -> {
+//                            //2、封装成指定格式
+//                            Catalog2Vo.Category3Vo category3Vo = new Catalog2Vo.Category3Vo(l2.getCatId().toString(), l3.getCatId().toString(), l3.getName());
+//
+//                            return category3Vo;
+//                        }).collect(Collectors.toList());
+//                        Catalog2Vo.setCatalog3List(category3Vos);
+//                    }
+//
+//                    return Catalog2Vo;
+//                }).collect(Collectors.toList());
+//            }
+//
+//            return Catalog2Vos;
+//        }));
+//
+//        return parentCid;
+//    }
+
+
+    // 根据id进行删除，如果有商品和其关联，就先不能删除
+    @Override
+    public void batchRemoveByIds(List<Long> asList) {
+        //TODO 检查当前的菜单是否被别的地方所引用
+        baseMapper.deleteBatchIds(asList);
+    }
+
+    public static void main(String[] args) throws Exception {
+        // Endpoint以深圳为例，其它Region请按实际情况填写。
+        String endpoint = "http://oss-cn-shanghai.aliyuncs.com";
+        // 云账号AccessKey有所有API访问权限，建议遵循阿里云安全最佳实践，创建并使用RAM子账号进行API访问或日常运维，请登录 https://ram.console.aliyun.com 创建。
+        String accessKeyId = "LTAI5t9cy9GK2a8szaVd6q9N";
+        String accessKeySecret = "q31gz7RuVBumyknZwyvDsbLPAVDt7R";
+
+        // 创建OSSClient实例。
+        OSS ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
+
+        // 上传文件流。
+        InputStream inputStream = new FileInputStream("C:\\Users\\m1342\\Pictures\\Saved Pictures\\ae0ae9bbc70012489799f956eafbb6cd.jpeg");
+        ossClient.putObject("gulimall-images", "ae0ae9bbc70012489799f956eafbb6cd.jpeg", inputStream);
+
+        // 关闭OSSClient。
+        ossClient.shutdown();
+        System.out.println("上传成功.");
     }
 }

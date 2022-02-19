@@ -20,5 +20,7 @@ public interface CategoryService extends IService<CategoryEntity> {
 
 
     public List<CategoryEntity> listWithTree();
+
+    public void batchRemoveByIds(List<Long> asList);
 }
 

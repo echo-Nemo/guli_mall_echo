@@ -39,10 +39,12 @@ public class CategoryEntity implements Serializable {
      * 层级
      */
     private Integer catLevel;
+
     /**
      * 是否显示[0-不显示，1显示]
      */
     private Integer showStatus;
+
     /**
      * 排序
      */

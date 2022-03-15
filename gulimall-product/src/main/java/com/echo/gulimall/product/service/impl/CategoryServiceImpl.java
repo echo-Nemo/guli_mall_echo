@@ -58,17 +58,21 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
         // 获取该菜单下的一级分类
         String firstLevel = redisTemplate.opsForValue().get("firstLevel");
-
-        // 缓存中没有数据
-        if (StringUtils.isBlank(firstLevel)) {
-            firstCategoryList = allCategoryList.stream().filter(categoryEntity -> categoryEntity
-                    .getParentCid() == 0).collect(Collectors.toList());
-            // 将一级分类转化为json
-            String firstCategoryJson = JSON.toJSONString(firstCategoryList);
-            redisTemplate.opsForValue().set("firstLevel", firstCategoryJson);
+        // 采用本地锁 进行加锁 并将查询到的数据放到redis中
+        synchronized (this) {
+            // 缓存中没有数据
+            if (StringUtils.isBlank(firstLevel)) {
+                System.out.println("在数据库中进行查询");
+                firstCategoryList = allCategoryList.stream().filter(categoryEntity -> categoryEntity
+                        .getParentCid() == 0).collect(Collectors.toList());
+                // 将一级分类转化为json
+                String firstCategoryJson = JSON.toJSONString(firstCategoryList);
+                redisTemplate.opsForValue().set("firstLevel", firstCategoryJson);
+            }
         }
 
         //  JSON.parseObject(catalogJSON, new TypeReference<Map<String, List<Catalogs2Vo>>>(){});
+        System.out.println("使用缓存进行查询");
         firstCategoryList = JSON.parseObject(firstLevel, new TypeReference<List<CategoryEntity>>() {
         });
 
@@ -179,22 +183,22 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         baseMapper.deleteBatchIds(asList);
     }
 
-    public static void main(String[] args) throws Exception {
-        // Endpoint以深圳为例，其它Region请按实际情况填写。
-        String endpoint = "http://oss-cn-shanghai.aliyuncs.com";
-        // 云账号AccessKey有所有API访问权限，建议遵循阿里云安全最佳实践，创建并使用RAM子账号进行API访问或日常运维，请登录 https://ram.console.aliyun.com 创建。
-        String accessKeyId = "LTAI5t9cy9GK2a8szaVd6q9N";
-        String accessKeySecret = "q31gz7RuVBumyknZwyvDsbLPAVDt7R";
-
-        // 创建OSSClient实例。
-        OSS ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
-
-        // 上传文件流。
-        InputStream inputStream = new FileInputStream("C:\\Users\\m1342\\Pictures\\Saved Pictures\\ae0ae9bbc70012489799f956eafbb6cd.jpeg");
-        ossClient.putObject("gulimall-images", "ae0ae9bbc70012489799f956eafbb6cd.jpeg", inputStream);
-
-        // 关闭OSSClient。
-        ossClient.shutdown();
-        System.out.println("上传成功.");
-    }
+//    public static void main(String[] args) throws Exception {
+//        // Endpoint以深圳为例，其它Region请按实际情况填写。
+//        String endpoint = "http://oss-cn-shanghai.aliyuncs.com";
+//        // 云账号AccessKey有所有API访问权限，建议遵循阿里云安全最佳实践，创建并使用RAM子账号进行API访问或日常运维，请登录 https://ram.console.aliyun.com 创建。
+//        String accessKeyId = "LTAI5t9cy9GK2a8szaVd6q9N";
+//        String accessKeySecret = "q31gz7RuVBumyknZwyvDsbLPAVDt7R";
+//
+//        // 创建OSSClient实例。
+//        OSS ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
+//
+//        // 上传文件流。
+//        InputStream inputStream = new FileInputStream("C:\\Users\\m1342\\Pictures\\Saved Pictures\\ae0ae9bbc70012489799f956eafbb6cd.jpeg");
+//        ossClient.putObject("gulimall-images", "ae0ae9bbc70012489799f956eafbb6cd.jpeg", inputStream);
+//
+//        // 关闭OSSClient。
+//        ossClient.shutdown();
+//        System.out.println("上传成功.");
+//    }
 }

@@ -183,22 +183,4 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         baseMapper.deleteBatchIds(asList);
     }
 
-//    public static void main(String[] args) throws Exception {
-//        // Endpoint以深圳为例，其它Region请按实际情况填写。
-//        String endpoint = "http://oss-cn-shanghai.aliyuncs.com";
-//        // 云账号AccessKey有所有API访问权限，建议遵循阿里云安全最佳实践，创建并使用RAM子账号进行API访问或日常运维，请登录 https://ram.console.aliyun.com 创建。
-//        String accessKeyId = "LTAI5t9cy9GK2a8szaVd6q9N";
-//        String accessKeySecret = "q31gz7RuVBumyknZwyvDsbLPAVDt7R";
-//
-//        // 创建OSSClient实例。
-//        OSS ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
-//
-//        // 上传文件流。
-//        InputStream inputStream = new FileInputStream("C:\\Users\\m1342\\Pictures\\Saved Pictures\\ae0ae9bbc70012489799f956eafbb6cd.jpeg");
-//        ossClient.putObject("gulimall-images", "ae0ae9bbc70012489799f956eafbb6cd.jpeg", inputStream);
-//
-//        // 关闭OSSClient。
-//        ossClient.shutdown();
-//        System.out.println("上传成功.");
-//    }
 }
